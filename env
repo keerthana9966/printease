@@ -1,0 +1,6 @@
+MONGODB_URI=mongodb+srv://admin:Admin%40123@cluster0.kaqth51.mongodb.net/printease?retryWrites=true&w=majority
+JWT_SECRET=mysecret123
+
+CLOUDINARY_CLOUD_NAME=die4meaf5
+CLOUDINARY_API_KEY=159926379154654
+CLOUDINARY_API_SECRET=mcxHnhmG34S19OSvXGH8C2Az3GM

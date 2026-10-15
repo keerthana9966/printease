@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrintEase — VNR VJIET Online Stationery Management</title>
+<meta name="description" content="No queues. No waiting. Upload your document, choose your preferences, pay via UPI, and pick up on your schedule at VNR VJIET.">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --ink: #0d1117;
+    --ink2: #2d3340;
+    --ink3: #6b7280;
+    --surf: #ffffff;
+    --surf2: #f5f6f8;
+    --surf3: #eaedf2;
+    --accent: #1534a0;
+    --accent2: #1e44d4;
+    --accent3: #e6ecfb;
+    --green: #0b5e3d;
+    --green2: #d1f0e3;
+    --amber: #7a4500;
+    --amber2: #fef3c7;
+    --red: #991b1b;
+    --red2: #fee2e2;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 4px 24px rgba(0,0,0,0.07);
+    --shadow2: 0 8px 40px rgba(0,0,0,0.12);
+    --font: 'Sora', sans-serif;
+    --mono: 'Space Mono', monospace;
+    --r: 10px;
+    --r2: 16px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font); background: var(--surf2); color: var(--ink); line-height: 1.6; min-height: 100vh; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surf2); }
+  ::-webkit-scrollbar-thumb { background: var(--surf3); border-radius: 4px; }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 200;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 60px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; cursor:pointer; }
+  .nav-logo { width: 36px; height: 36px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .nav-logo svg { width: 22px; height: 22px; }
+  .brand-name { color: #fff; font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+  .brand-name span { font-weight: 300; opacity: 0.65; font-size: 14px; margin-left: 4px; }
+  .nav-links { display: flex; gap: 2px; }
+  .nav-link { color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 7px; cursor: pointer; border: none; background: transparent; font-family: var(--font); transition: all 0.15s; }
+  .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.15); color: #fff; }
+  .nav-cta { background: #fff; color: var(--accent); font-size: 13px; font-weight: 700; padding: 8px 18px; border-radius: 8px; cursor: pointer; border: none; font-family: var(--font); transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
+
+  /* ── PAGE SYSTEM ── */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeUp 0.25s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    background: var(--ink); color: #fff;
+    padding: 14px 22px; border-radius: var(--r2);
+    font-size: 14px; font-weight: 500;
+    box-shadow: var(--shadow2);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 360px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.toast-success { background: var(--green); }
+  #toast.toast-error { background: var(--red); }
+  #toast.toast-info { background: var(--accent2); }
+
+  /* ── SPINNER ── */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(140deg, #081870 0%, #1534a0 45%, #1e44d4 100%);
+    padding: 80px 2rem 100px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 40%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0; opacity: 0.04;
+    background-image: linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .hero-inner { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; }
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; font-size: 12px; font-family: var(--mono);
+    padding: 6px 14px; border-radius: 30px; margin-bottom: 24px;
+    letter-spacing: 0.5px;
+  }
+  .hero-pill::before { content: '●'; color: #4ade80; font-size: 8px; }
+  .hero h1 { color: #fff; font-size: clamp(28px, 5vw, 52px); font-weight: 700; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 18px; }
+  .hero h1 em { font-style: normal; color: #93bbff; }
+  .hero p { color: rgba(255,255,255,0.68); font-size: 17px; max-width: 500px; margin: 0 auto 36px; line-height: 1.65; }
+  .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn-white { background: #fff; color: var(--accent); font-size: 14px; font-weight: 700; padding: 13px 28px; border-radius: var(--r); cursor: pointer; border: none; font-family: var(--font); transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-white:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+  .btn-ghost { background: transparent; color: rgba(255,255,255,0.85); font-size: 14px; font-weight: 500; padding: 13px 28px; border-radius: var(--r); cursor: pointer; border: 1.5px solid rgba(255,255,255,0.35); font-family: var(--font); transition: all 0.15s; }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+
+  /* ── STATS BAR ── */
+  .stats-bar { background: var(--surf); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+  .stats-inner { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .stat-cell { padding: 22px 20px; text-align: center; border-right: 1px solid var(--border); }
+  .stat-cell:last-child { border-right: none; }
+  .stat-n { font-size: 24px; font-weight: 700; color: var(--accent); font-family: var(--mono); letter-spacing: -1px; }
+  .stat-l { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+  /* ── HOW IT WORKS ── */
+  .section { max-width: 960px; margin: 0 auto; padding: 48px 2rem; }
+  .sec-heading { font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: -0.5px; margin-bottom: 6px; }
+  .sec-sub { font-size: 14px; color: var(--ink3); margin-bottom: 28px; }
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .step-card { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r2); padding: 24px; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; }
+  .step-card:hover { transform: translateY(-3px); box-shadow: var(--shadow2); }
+  .step-num { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent2); background: var(--accent3); padding: 3px 9px; border-radius: 20px; display: inline-block; margin-bottom: 14px; }
+  .step-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px; }
+  .step-card h3 { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .step-card p { font-size: 13px; color: var(--ink3); line-height: 1.55; }
+
+  /* ── CTA BANNER ── */
+  .cta-banner { background: linear-gradient(135deg, #081870, #1534a0); border-radius: var(--r2); padding: 32px 36px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; box-shadow: var(--shadow2); }
+  .cta-banner h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .cta-banner p { font-size: 14px; color: rgba(255,255,255,0.6); }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone { border: 2.5px dashed var(--border); border-radius: var(--r2); padding: 44px 24px; text-align: center; cursor: pointer; background: var(--surf); transition: all 0.2s; margin-bottom: 24px; }
+  .upload-zone:hover { border-color: var(--accent2); background: var(--accent3); }
+  .upload-zone.has-file { border-color: var(--green); border-style: solid; background: var(--green2); }
+  .upload-icon { width: 52px; height: 52px; background: var(--accent3); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+  .upload-zone h3 { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .upload-zone p { font-size: 13px; color: var(--ink3); }
+  .file-info { display: none; align-items: center; gap: 10px; background: var(--surf); border: 1px solid var(--green); border-radius: 8px; padding: 10px 16px; margin-top: 14px; font-size: 13px; color: var(--green); font-weight: 500; justify-content: center; }
+
+  /* ── PRINT TYPE CARDS ── */
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .type-card { background: var(--surf); border: 2px solid var(--border); border-radius: var(--r2); padding: 20px; cursor: pointer; transition: all 0.15s; position: relative; }
+  .type-card:hover { border-color: var(--accent2); }
+  .type-card.sel { border-color: var(--accent2); background: var(--accent3); }
+  .type-card .check { position: absolute; top: 14px; right: 14px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent2); color: #fff; display: none; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .type-card.sel .check { display: flex; }
+  .type-icon { font-size: 26px; margin-bottom: 10px; }
+  .type-card h4 { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .type-card p { font-size: 12px; color: var(--ink3); }
+  .type-price { font-size: 16px; font-weight: 700; color: var(--accent2); font-family: var(--mono); margin-top: 8px; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .form-grid-2 { grid-template-columns: 1fr 1fr; }
+  .fg { display: flex; flex-direction: column; gap: 6px; }
+  .fg label { font-size: 12px; font-weight: 600; color: var(--ink2); letter-spacing: 0.3px; text-transform: uppercase; }
+  .fg select, .fg input { background: var(--surf); border: 1.5px solid var(--border); border-radius: var(--r); padding: 10px 12px; font-size: 14px; color: var(--ink); font-family: var(--font); outline: none; transition: border-color 0.15s; appearance: none; }
+  .fg select:focus, .fg input:focus { border-color: var(--accent2); }
+
+  /* ── TIME SLOTS ── */
+  .slot-heading { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 12px; }
+  .slot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 24px; }
+  .slot { background: var(--surf); border: 1.5px solid var(--border); border-radius: var(--r); padding: 11px 8px; text-align: center; cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+  .slot:hover:not(.taken) { border-color: var(--accent2); }
+  .slot.sel { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+  .slot.taken { opacity: 0.4; cursor: not-allowed; background: var(--surf2); }
+  .slot-t { font-size: 13px; font-weight: 600; font-family: var(--mono); }
+  .slot-a { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+  /* ── COST CARD ── */
+  .cost-card { background: var(--ink); border-radius: var(--r2); padding: 22px 24px; margin-bottom: 20px; box-shadow: var(--shadow2); }
+  .cost-rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+  .cost-row { display: flex; justify-content: space-between; font-size: 14px; align-items: center; }
+  .cost-row .cl { color: rgba(255,255,255,0.55); }
+  .cost-row .cv { color: #fff; font-family: var(--mono); font-weight: 700; }
+  .cost-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 0; }
+  .cost-total-row { display: flex; justify-content: space-between; align-items: center; }
+  .cost-total-row .cl { color: rgba(255,255,255,0.6); font-size: 13px; }
+  .cost-total-val { font-size: 26px; font-weight: 700; font-family: var(--mono); color: #93bbff; letter-spacing: -1px; }
+  .upi-strip { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.06); border-radius: var(--r); padding: 12px 16px; margin-top: 14px; }
+  .upi-tag { background: rgba(255,255,255,0.12); border-radius: 6px; padding: 4px 10px; font-size: 11px; font-family: var(--mono); color: #93bbff; white-space: nowrap; }
+  .upi-strip span { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+  /* ── PAY BUTTON ── */
+  .pay-btn { width: 100%; background: linear-gradient(135deg, #1534a0, #1e44d4); color: #fff; font-size: 15px; font-weight: 700; padding: 15px; border-radius: var(--r); cursor: pointer; border: none; font-family: var(--font); transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(21,52,160,0.3); }
+  .pay-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(21,52,160,0.4); }
+  .pay-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* ── TRACK ── */
+  .search-bar { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r2); padding: 18px 20px; display: flex; gap: 12px; align-items: center; margin-bottom: 20px; box-shadow: var(--shadow); }
+  .search-bar input { flex: 1; background: var(--surf2); border: 1.5px solid var(--border); border-radius: var(--r); padding: 10px 14px; font-size: 14px; color: var(--ink); font-family: var(--font); outline: none; transition: border-color 0.15s; }
+  .search-bar input:focus { border-color: var(--accent2); }
+  .search-btn { background: var(--accent2); color: #fff; font-size: 14px; font-weight: 600; padding: 10px 22px; border-radius: var(--r); cursor: pointer; border: none; font-family: var(--font); transition: all 0.15s; white-space: nowrap; }
+  .search-btn:hover { background: var(--accent); }
+
+  /* ── ORDER CONFIRM CARD ── */
+  .confirm-card { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r2); padding: 36px 28px; text-align: center; box-shadow: var(--shadow); margin-bottom: 24px; }
+  .confirm-icon { width: 68px; height: 68px; background: var(--green2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 30px; }
+  .confirm-card h2 { font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .confirm-card .sub { font-size: 14px; color: var(--ink3); margin-bottom: 16px; }
+  .order-id-badge { font-family: var(--mono); font-size: 14px; background: var(--accent3); color: var(--accent2); border-radius: 8px; padding: 8px 18px; display: inline-block; margin-bottom: 6px; font-weight: 700; }
+  .order-meta { font-size: 13px; color: var(--ink3); margin-bottom: 28px; }
+
+  /* ── TRACKER STEPS ── */
+  .tracker { display: flex; justify-content: space-between; position: relative; }
+  .tracker::before { content: ''; position: absolute; top: 22px; left: 8%; right: 8%; height: 2px; background: var(--surf3); z-index: 0; }
+  .t-step { flex: 1; text-align: center; position: relative; z-index: 1; }
+  .t-dot { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--surf3); background: var(--surf); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 18px; transition: all 0.3s; }
+  .t-step.done .t-dot { background: var(--green2); border-color: var(--green); }
+  .t-step.active .t-dot { background: var(--accent3); border-color: var(--accent2); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(30,68,212,0.3); } 50% { box-shadow: 0 0 0 8px rgba(30,68,212,0); } }
+  .t-label { font-size: 12px; color: var(--ink3); font-weight: 500; }
+  .t-step.done .t-label, .t-step.active .t-label { color: var(--ink); }
+
+  /* ── ORDER TABLE ── */
+  .order-tbl { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; box-shadow: var(--shadow); }
+  .tbl-head { display: grid; grid-template-columns: 120px 1fr 80px 110px 120px; padding: 10px 20px; background: var(--surf2); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--ink3); letter-spacing: 0.6px; text-transform: uppercase; }
+  .tbl-row { display: grid; grid-template-columns: 120px 1fr 80px 110px 120px; padding: 13px 20px; border-bottom: 1px solid var(--border); font-size: 13px; align-items: center; transition: background 0.1s; }
+  .tbl-row:last-child { border-bottom: none; }
+  .tbl-row:hover { background: var(--surf2); }
+  .oid { font-family: var(--mono); font-size: 12px; color: var(--accent2); font-weight: 700; }
+
+  /* ── BADGES ── */
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+  .b-pending { background: var(--amber2); color: var(--amber); }
+  .b-printing { background: var(--accent3); color: var(--accent2); }
+  .b-ready { background: var(--green2); color: var(--green); }
+  .b-done { background: var(--surf3); color: var(--ink3); }
+
+  /* ── VENDOR DASHBOARD ── */
+  .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
+  .status-live { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--green); background: var(--green2); padding: 6px 14px; border-radius: 20px; }
+  .status-live::before { content: '●'; font-size: 9px; animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .refresh-btn { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r); padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: var(--font); color: var(--ink); transition: all 0.15s; }
+  .refresh-btn:hover { background: var(--surf3); }
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .metric { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r2); padding: 18px 20px; box-shadow: var(--shadow); }
+  .metric-l { font-size: 12px; color: var(--ink3); margin-bottom: 8px; }
+  .metric-v { font-size: 26px; font-weight: 700; font-family: var(--mono); color: var(--ink); letter-spacing: -1px; margin-bottom: 6px; }
+  .metric-tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+  .mt-blue { background: var(--accent3); color: var(--accent2); }
+  .mt-amber { background: var(--amber2); color: var(--amber); }
+  .mt-green { background: var(--green2); color: var(--green); }
+
+  /* ── QUEUE TABLE ── */
+  .queue-tbl { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; margin-bottom: 22px; box-shadow: var(--shadow); }
+  .q-head { display: grid; grid-template-columns: 90px 1fr 70px 80px 100px 130px; padding: 10px 18px; background: var(--surf2); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--ink3); letter-spacing: 0.6px; text-transform: uppercase; }
+  .q-row { display: grid; grid-template-columns: 90px 1fr 70px 80px 100px 130px; padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: 13px; align-items: center; transition: background 0.1s; }
+  .q-row:last-child { border-bottom: none; }
+  .q-row:hover { background: var(--surf2); }
+  .act-btns { display: flex; gap: 6px; }
+  .act { font-size: 11px; font-weight: 600; padding: 5px 11px; border-radius: 6px; cursor: pointer; font-family: var(--font); border: 1px solid var(--border); background: var(--surf2); color: var(--ink2); transition: all 0.1s; }
+  .act:hover { background: var(--surf3); }
+  .act.start { background: var(--accent3); color: var(--accent2); border-color: var(--accent2); }
+  .act.printing { background: var(--amber2); color: var(--amber); border-color: var(--amber); cursor: default; }
+  .act.ready { background: var(--green2); color: var(--green); border-color: var(--green); cursor: default; }
+
+  /* ── BOTTOM SPLIT ── */
+  .split { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
+  .chart-card { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r2); padding: 18px; box-shadow: var(--shadow); }
+  .chart-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 18px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 100px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.3s; }
+  .bar-lbl { font-size: 10px; color: var(--ink3); font-family: var(--mono); }
+
+  /* ── NOTIFICATIONS ── */
+  .notif-card { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r2); overflow: hidden; box-shadow: var(--shadow); }
+  .notif-hdr { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .notif-hdr h3 { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .notif-count { background: var(--red2); color: var(--red); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .notif-item { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; cursor: pointer; transition: background 0.1s; }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-item:hover { background: var(--surf2); }
+  .notif-item.unread { background: var(--accent3); }
+  .notif-item.unread:hover { background: #dde6f7; }
+  .n-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); margin-top: 5px; flex-shrink: 0; }
+  .n-dot.grey { background: var(--surf3); }
+  .n-text { font-size: 13px; color: var(--ink); line-height: 1.4; }
+  .n-time { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+  /* ── LOGIN PAGE ── */
+  .login-tabs { display: flex; gap: 0; margin-bottom: 24px; border: 1.5px solid var(--border); border-radius: var(--r); overflow: hidden; }
+  .login-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 14px; font-weight: 600; background: var(--surf2); color: var(--ink3); border: none; font-family: var(--font); transition: all 0.15s; }
+  .login-tab.active { background: var(--accent2); color: #fff; }
+  .vendor-invite-field { display: none; }
+
+  /* ── FOOTER ── */
+  footer { background: var(--ink); color: rgba(255,255,255,0.45); text-align: center; padding: 28px 2rem; font-size: 13px; margin-top: 48px; }
+  footer strong { color: rgba(255,255,255,0.75); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .steps-grid { grid-template-columns: 1fr; }
+    .type-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .slot-grid { grid-template-columns: repeat(3, 1fr); }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    .stats-inner { grid-template-columns: 1fr 1fr; }
+    .tbl-head, .tbl-row { grid-template-columns: 100px 1fr 80px 100px; }
+    .tbl-head > *:last-child, .tbl-row > *:last-child { display: none; }
+    .q-head, .q-row { grid-template-columns: 80px 1fr 70px 100px; }
+    .q-head > *:nth-child(3), .q-head > *:nth-child(4), .q-row > *:nth-child(3), .q-row > *:nth-child(4) { display: none; }
+    .split { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .cta-banner { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand" onclick="showPage('home')">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1534a0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/>
+        <line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>
+      </svg>
+    </div>
+    <div class="brand-name">PrintEase <span>VNR VJIET</span></div>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" id="nav-home" onclick="showPage('home')">Home</button>
+    <button class="nav-link" id="nav-order" onclick="requireLogin('order')" style="display:none;">New Order</button>
+    <button class="nav-link" id="nav-track" onclick="requireLogin('track')" style="display:none;">Track Order</button>
+    <button class="nav-link" id="nav-vendor" onclick="showPage('vendor')" style="display:none;">Vendor</button>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <span id="nav-user-name" style="display:none; color:rgba(255,255,255,0.85); font-size:13px; font-weight:500;"></span>
+    <button class="nav-link" id="btn-login-nav" onclick="showPage('login')">Login / Sign Up</button>
+    <button class="nav-link" id="btn-logout" onclick="doLogout()" style="display:none;">Logout</button>
+    <button class="nav-cta" id="btn-cta-print" onclick="requireLogin('order')" style="display:none;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      Print Now
+    </button>
+  </div>
+</nav>
+
+<!-- ═══ LOGIN PAGE ═══ -->
+<div id="page-login" class="page">
+  <div class="section" style="max-width: 440px; margin: 40px auto; background: var(--surf); padding: 36px; border-radius: var(--r2); box-shadow: var(--shadow2);">
+    <div style="text-align:center; margin-bottom:24px;">
+      <div style="font-size:32px; margin-bottom:8px;">🖨️</div>
+      <h2 style="font-size:20px; font-weight:700; color:var(--ink);">Welcome to PrintEase</h2>
+      <p style="font-size:13px; color:var(--ink3); margin-top:4px;">VNR VJIET Campus Printing System</p>
+    </div>
+
+    <!-- Mode tabs: Login vs Signup -->
+    <div class="login-tabs" style="margin-bottom:20px;">
+      <button class="login-tab active" id="tab-signin" onclick="switchAuthMode('signin')">Sign In</button>
+      <button class="login-tab" id="tab-signup" onclick="switchAuthMode('signup')">Sign Up</button>
+    </div>
+
+    <!-- Role tabs: Customer vs Vendor -->
+    <div class="login-tabs" id="role-tabs">
+      <button class="login-tab active" id="tab-customer" onclick="switchRole('customer')">👤 Student / Customer</button>
+      <button class="login-tab" id="tab-vendor" onclick="switchRole('vendor')">🏪 Vendor / Staff</button>
+    </div>
+
+    <div id="login-form" style="margin-top:20px;">
+      <div class="fg" style="margin-bottom:12px;" id="signup-name-field" style="display:none;">
+        <label>Full Name</label>
+        <input type="text" id="auth-name" placeholder="e.g. Riya Sharma">
+      </div>
+      <div class="fg" style="margin-bottom:12px;">
+        <label>Email Address</label>
+        <input type="email" id="auth-email" placeholder="e.g. yourname@vnrvjiet.in">
+      </div>
+      <div class="fg" style="margin-bottom:12px;">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="Minimum 6 characters">
+      </div>
+      <div class="fg vendor-invite-field" id="vendor-invite-field" style="margin-bottom:12px;">
+        <label>Vendor Invite Code</label>
+        <input type="text" id="auth-invite" placeholder="Enter vendor invite code">
+        <span style="font-size:11px; color:var(--ink3); margin-top:4px;">Contact the administrator for the invite code.</span>
+      </div>
+      <button class="pay-btn" id="auth-btn" onclick="submitAuth()">
+        <span id="auth-btn-text">Continue</span>
+      </button>
+      <div id="auth-error" style="display:none; margin-top:12px; padding:10px 14px; background:var(--red2); color:var(--red); border-radius:var(--r); font-size:13px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HOME PAGE ═══ -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-inner">
+      <div class="hero-pill">System Online &nbsp;·&nbsp; Shop Open Until 6:00 PM</div>
+      <h1>Campus Printouts,<br><em>Reinvented</em> for VJIET</h1>
+      <p>No queues. No waiting. Upload your document, choose your preferences, pay via UPI, and pick up on your schedule.</p>
+      <div class="hero-btns">
+        <button class="btn-white" onclick="requireLogin('order')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Start Printing
+        </button>
+        <button class="btn-ghost" onclick="requireLogin('track')">Track My Order</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stats-inner">
+      <div class="stat-cell"><div class="stat-n">1,480+</div><div class="stat-l">Orders this semester</div></div>
+      <div class="stat-cell"><div class="stat-n">&lt;5 min</div><div class="stat-l">Average wait time</div></div>
+      <div class="stat-cell"><div class="stat-n">₹2.50</div><div class="stat-l">Per B&W page</div></div>
+      <div class="stat-cell"><div class="stat-n">100%</div><div class="stat-l">UPI secured payments</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-heading">How it works</div>
+    <div class="sec-sub">Three simple steps to get your printouts without any hassle.</div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">STEP 01</div>
+        <div class="step-icon" style="background:#e6ecfb;">📤</div>
+        <h3>Upload & Configure</h3>
+        <p>Upload your PDF or DOCX. Choose colour or B&W, number of copies, page range, binding, and paper size.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">STEP 02</div>
+        <div class="step-icon" style="background:#d1f0e3;">💳</div>
+        <h3>Pay via UPI</h3>
+        <p>Cost is auto-calculated instantly. Pay securely via Google Pay, PhonePe, Paytm, or BHIM UPI.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">STEP 03</div>
+        <div class="step-icon" style="background:#fef3c7;">🕐</div>
+        <h3>Choose & Collect</h3>
+        <p>Pick a convenient time slot. Walk in, grab your printout — no crowds, no waiting in line.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 48px;">
+      <div class="sec-heading">Why PrintEase?</div>
+      <div class="sec-sub">Built to solve real problems faced by students at VNR VJIET.</div>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 4px;">
+        <div style="background:var(--surf);border:1px solid var(--border);border-radius:var(--r2);padding:20px;box-shadow:var(--shadow);">
+          <div style="font-size:11px;font-weight:700;color:var(--red);background:var(--red2);padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:12px;">BEFORE</div>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
+            <li style="font-size:13px;color:var(--ink3);">❌ &nbsp;Long queues, especially near deadlines</li>
+            <li style="font-size:13px;color:var(--ink3);">❌ &nbsp;Manual cash payment only</li>
+            <li style="font-size:13px;color:var(--ink3);">❌ &nbsp;No order tracking or confirmation</li>
+            <li style="font-size:13px;color:var(--ink3);">❌ &nbsp;Staff overwhelmed with peak orders</li>
+          </ul>
+        </div>
+        <div style="background:var(--surf);border:1.5px solid var(--green);border-radius:var(--r2);padding:20px;box-shadow:var(--shadow);">
+          <div style="font-size:11px;font-weight:700;color:var(--green);background:var(--green2);padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:12px;">AFTER</div>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
+            <li style="font-size:13px;color:var(--ink2);">✅ &nbsp;Book a time slot, zero crowding</li>
+            <li style="font-size:13px;color:var(--ink2);">✅ &nbsp;Instant UPI payment from anywhere</li>
+            <li style="font-size:13px;color:var(--ink2);">✅ &nbsp;Live order tracking & notifications</li>
+            <li style="font-size:13px;color:var(--ink2);">✅ &nbsp;Smart vendor dashboard for staff</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 48px;" class="cta-banner">
+      <div>
+        <h2>Ready to submit your assignment?</h2>
+        <p>Get your printout done in under 15 minutes — end to end.</p>
+      </div>
+      <button class="btn-white" onclick="requireLogin('order')">Start Order →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ORDER PAGE ═══ -->
+<div id="page-order" class="page">
+  <div class="section">
+    <div class="sec-heading">New Print Order</div>
+    <div class="sec-sub">Upload your file, set preferences, and pay securely.</div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="file-input" accept=".pdf,.doc,.docx,.ppt,.pptx" style="display:none;" onchange="onFileSelected(event)">
+
+    <div id="upload-zone" class="upload-zone" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">
+        <svg width="26" height="26" fill="none" stroke="#1e44d4" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      </div>
+      <h3 id="upload-title">Drop your file here, or click to browse</h3>
+      <p id="upload-hint">Supports PDF, DOCX, PPTX — maximum 50 MB</p>
+      <div id="file-info" class="file-info"></div>
+    </div>
+
+    <div class="sec-heading" style="font-size:16px;margin-bottom:14px;">Print type</div>
+    <div class="type-grid">
+      <div class="type-card sel" id="tc-bw" onclick="setPrintType('bw')">
+        <div class="check">✓</div>
+        <div class="type-icon">⬛</div>
+        <h4>Black & White</h4>
+        <p>Standard text, notes, assignments</p>
+        <div class="type-price">₹2.50 / page</div>
+      </div>
+      <div class="type-card" id="tc-col" onclick="setPrintType('color')">
+        <div class="check">✓</div>
+        <div class="type-icon">🎨</div>
+        <h4>Colour Print</h4>
+        <p>Presentations, charts, diagrams</p>
+        <div class="type-price">₹12.00 / page</div>
+      </div>
+    </div>
+
+    <div class="sec-heading" style="font-size:16px;margin-bottom:14px;">Print preferences</div>
+    <div class="form-grid">
+      <div class="fg">
+        <label>Copies</label>
+        <input type="number" id="f-copies" value="1" min="1" max="50" oninput="calcCost()">
+      </div>
+      <div class="fg">
+        <label>Page range</label>
+        <input type="text" id="f-range" value="All pages" placeholder="e.g. 1–10">
+      </div>
+      <div class="fg">
+        <label>Page size</label>
+        <select id="f-size"><option>A4</option><option>A3</option><option>Letter</option></select>
+      </div>
+    </div>
+    <div class="form-grid form-grid-2">
+      <div class="fg">
+        <label>Binding</label>
+        <select id="f-bind" onchange="calcCost()">
+          <option value="none">None</option>
+          <option value="spiral">Spiral binding — ₹15</option>
+          <option value="staple">Staple — ₹10</option>
+          <option value="comb">Comb binding — ₹25</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Print sides</label>
+        <select id="f-side" onchange="calcCost()">
+          <option value="single">Single sided</option>
+          <option value="double">Double sided (saves paper)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="slot-heading" style="margin-top:8px;">Pickup time slot</div>
+    <div class="slot-grid" id="slot-grid"></div>
+
+    <div class="cost-card">
+      <div class="cost-rows">
+        <div class="cost-row"><span class="cl" id="cc-pages-label">Pages (—) × copies</span><span class="cv" id="cc-pages">₹0.00</span></div>
+        <div class="cost-row"><span class="cl">Binding</span><span class="cv" id="cc-bind">₹0.00</span></div>
+      </div>
+      <hr class="cost-divider">
+      <div class="cost-total-row">
+        <span class="cl">Total payable</span>
+        <span class="cost-total-val" id="cc-total">₹0.00</span>
+      </div>
+      <div class="upi-strip">
+        <span class="upi-tag">UPI</span>
+        <span>Pay securely via Google Pay · PhonePe · Paytm · BHIM</span>
+      </div>
+    </div>
+
+    <button class="pay-btn" id="place-order-btn" onclick="confirmOrder()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span id="order-btn-text">Pay & Confirm Order</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ TRACK PAGE ═══ -->
+<div id="page-track" class="page">
+  <div class="section">
+    <div class="sec-heading">Track Your Order</div>
+    <div class="sec-sub">Enter your order ID to see live status.</div>
+
+    <div class="search-bar">
+      <input type="text" id="track-input" placeholder="Enter order ID — e.g. PE-2024-0001">
+      <button class="search-btn" onclick="doTrack()">Search Order</button>
+    </div>
+
+    <div id="track-result" style="display:none;">
+      <div class="confirm-card" id="track-card">
+        <div class="confirm-icon" id="track-icon">📋</div>
+        <h2 id="track-status-text">Order In Progress</h2>
+        <div class="sub" id="track-sub">Your printout is being prepared.</div>
+        <div class="order-id-badge" id="track-order-id"></div>
+        <div class="order-meta" id="track-meta"></div>
+        <div class="tracker" id="tracker">
+          <div class="t-step" id="ts-placed">
+            <div class="t-dot">✅</div>
+            <div class="t-label">Order placed</div>
+          </div>
+          <div class="t-step" id="ts-paid">
+            <div class="t-dot">💳</div>
+            <div class="t-label">Payment done</div>
+          </div>
+          <div class="t-step" id="ts-printing">
+            <div class="t-dot">⚙️</div>
+            <div class="t-label">Printing…</div>
+          </div>
+          <div class="t-step" id="ts-ready">
+            <div class="t-dot">📦</div>
+            <div class="t-label">Ready</div>
+          </div>
+          <div class="t-step" id="ts-collected">
+            <div class="t-dot">🎓</div>
+            <div class="t-label">Collected</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-heading" style="font-size:16px;margin-bottom:14px;">My recent orders</div>
+    <div id="my-orders-container">
+      <div class="order-tbl">
+        <div class="tbl-head"><span>Order ID</span><span>Details</span><span>Cost</span><span>Status</span><span>Pickup slot</span></div>
+        <div id="my-orders-rows">
+          <div style="padding:24px; text-align:center; color:var(--ink3); font-size:13px;">Login to see your orders</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ VENDOR PAGE ═══ -->
+<div id="page-vendor" class="page">
+  <div class="section">
+    <div class="dash-header">
+      <div>
+        <div class="sec-heading" style="margin-bottom:2px;">Vendor Dashboard</div>
+        <div style="font-size:13px;color:var(--ink3);" id="vendor-welcome">Stationery staff management panel</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div class="status-live">Shop Open</div>
+        <button class="refresh-btn" onclick="loadVendorDashboard()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-l">Today's orders</div>
+        <div class="metric-v" id="m-total">—</div>
+        <span class="metric-tag mt-blue" id="m-total-tag">Loading...</span>
+      </div>
+      <div class="metric">
+        <div class="metric-l">Pending</div>
+        <div class="metric-v" id="m-pend">—</div>
+        <span class="metric-tag mt-amber">Needs action</span>
+      </div>
+      <div class="metric">
+        <div class="metric-l">Ready for pickup</div>
+        <div class="metric-v" id="m-ready">—</div>
+        <span class="metric-tag mt-green">Waiting</span>
+      </div>
+      <div class="metric">
+        <div class="metric-l">Today's revenue</div>
+        <div class="metric-v" id="m-rev">—</div>
+        <span class="metric-tag mt-green">UPI collected</span>
+      </div>
+    </div>
+
+    <div class="sec-heading" style="font-size:16px;margin-bottom:14px;">Active print queue</div>
+    <div class="queue-tbl">
+      <div class="q-head"><span>Order</span><span>Student & Details</span><span>Pages</span><span>Amount</span><span>Slot</span><span>Action</span></div>
+      <div id="vendor-queue-rows">
+        <div style="padding:24px; text-align:center; color:var(--ink3); font-size:13px;">Loading orders...</div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="chart-card">
+        <div class="chart-title">Orders per hour — today</div>
+        <div class="bar-chart" id="bar-chart"></div>
+      </div>
+      <div class="notif-card">
+        <div class="notif-hdr">
+          <h3>Recent Activity</h3>
+          <span class="notif-count" id="notif-count">—</span>
+        </div>
+        <div id="notif-list">
+          <div style="padding:16px; text-align:center; color:var(--ink3); font-size:13px;">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER SUCCESS PAGE -->
+<div id="page-success" class="page">
+  <div class="section" style="max-width:600px; margin:0 auto;">
+    <div class="confirm-card">
+      <div class="confirm-icon">✅</div>
+      <h2>Order Confirmed!</h2>
+      <div class="sub">Your print job has been received. We'll start processing it shortly.</div>
+      <div class="order-id-badge" id="success-order-id">PE-2024-0001</div>
+      <div class="order-meta" id="success-meta">—</div>
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn-white" style="background:var(--accent2); color:#fff;" onclick="showPage('track')">Track My Order</button>
+        <button class="btn-white" onclick="showPage('order'); resetOrder()">Place Another Order</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Built for <strong>VNR VJIET</strong> &nbsp;·&nbsp; PrintEase Online Stationery Management System &nbsp;·&nbsp; © 2024
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONFIGURATION
+// ═══════════════════════════════════════════════════════
+const API = ''; // Empty = same origin (served from Express)
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let state = {
+  user: null,
+  token: null,
+  printType: 'bw',
+  pageCount: 0,
+  selectedSlot: null,
+  uploadedFile: null,   // { fileUrl, filePublicId, fileName, pageCount }
+};
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Restore session from localStorage
+  const saved = localStorage.getItem('pe_session');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      state.user = s.user;
+      state.token = s.token;
+      applySession();
+    } catch(e) { localStorage.removeItem('pe_session'); }
+  }
+
+  buildSlots();
+  calcCost();
+});
+
+// ═══════════════════════════════════════════════════════
+//  SESSION MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function applySession() {
+  const loggedIn = !!state.user;
+  const isVendor = loggedIn && state.user.role === 'vendor';
+  const isCustomer = loggedIn && state.user.role === 'customer';
+
+  document.getElementById('btn-login-nav').style.display = loggedIn ? 'none' : '';
+  document.getElementById('btn-logout').style.display = loggedIn ? '' : 'none';
+  document.getElementById('btn-cta-print').style.display = isCustomer ? '' : 'none';
+  document.getElementById('nav-order').style.display = isCustomer ? '' : 'none';
+  document.getElementById('nav-track').style.display = isCustomer ? '' : 'none';
+  document.getElementById('nav-vendor').style.display = isVendor ? '' : 'none';
+
+  const nameEl = document.getElementById('nav-user-name');
+  if (loggedIn) {
+    nameEl.style.display = '';
+    nameEl.textContent = `👋 ${state.user.name}`;
+  } else {
+    nameEl.style.display = 'none';
+  }
+}
+
+function saveSession() {
+  localStorage.setItem('pe_session', JSON.stringify({ user: state.user, token: state.token }));
+}
+
+function doLogout() {
+  state.user = null;
+  state.token = null;
+  localStorage.removeItem('pe_session');
+  applySession();
+  showPage('home');
+  showToast('Logged out successfully', 'info');
+}
+
+function requireLogin(page) {
+  if (!state.user) {
+    showToast('Please login to continue', 'info');
+    showPage('login');
+    return;
+  }
+  showPage(page);
+  if (page === 'track') loadMyOrders();
+  if (page === 'vendor') loadVendorDashboard();
+}
+
+// ═══════════════════════════════════════════════════════
+//  PAGE NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const pg = document.getElementById('page-' + id);
+  if (pg) pg.classList.add('active');
+  const navBtn = document.getElementById('nav-' + id);
+  if (navBtn) navBtn.classList.add('active');
+  window.scrollTo(0, 0);
+
+  if (id === 'vendor' && state.user && state.user.role === 'vendor') loadVendorDashboard();
+  if (id === 'track' && state.user) loadMyOrders();
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOAST NOTIFICATIONS
+// ═══════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show toast-' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+// ═══════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════
+let authMode = 'signin'; // 'signin' | 'signup'
+let authRole = 'customer'; // 'customer' | 'vendor'
+
+function switchAuthMode(mode) {
+  authMode = mode;
+  document.getElementById('tab-signin').classList.toggle('active', mode === 'signin');
+  document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+  document.getElementById('signup-name-field').style.display = mode === 'signup' ? 'flex' : 'none';
+  document.getElementById('auth-btn-text').textContent = mode === 'signin' ? 'Sign In' : 'Create Account';
+  document.getElementById('auth-error').style.display = 'none';
+  updateVendorInviteVisibility();
+}
+
+function switchRole(role) {
+  authRole = role;
+  document.getElementById('tab-customer').classList.toggle('active', role === 'customer');
+  document.getElementById('tab-vendor').classList.toggle('active', role === 'vendor');
+  document.getElementById('auth-error').style.display = 'none';
+  updateVendorInviteVisibility();
+}
+
+function updateVendorInviteVisibility() {
+  const show = authRole === 'vendor' && authMode === 'signup';
+  document.getElementById('vendor-invite-field').style.display = show ? 'flex' : 'none';
+}
+
+async function submitAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const name = document.getElementById('auth-name').value.trim();
+  const inviteCode = document.getElementById('auth-invite').value.trim();
+  const errEl = document.getElementById('auth-error');
+  const btn = document.getElementById('auth-btn');
+
+  errEl.style.display = 'none';
+
+  if (!email || !password) {
+    errEl.textContent = 'Please enter email and password.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Please wait...';
+
+  try {
+    let endpoint, body;
+
+    if (authMode === 'signup') {
+      if (!name) { throw new Error('Please enter your full name.'); }
+      endpoint = authRole === 'vendor' ? '/api/auth/register/vendor' : '/api/auth/register/customer';
+      body = { name, email, password, ...(authRole === 'vendor' ? { inviteCode } : {}) };
+    } else {
+      endpoint = authRole === 'vendor' ? '/api/auth/login/vendor' : '/api/auth/login/customer';
+      body = { email, password };
+    }
+
+    const res = await fetch(API + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Authentication failed.');
+    }
+
+    state.user = data.user;
+    state.token = data.token;
+    saveSession();
+    applySession();
+
+    showToast(`Welcome, ${data.user.name}! 🎉`, 'success');
+
+    // Route based on role
+    if (data.user.role === 'vendor') {
+      showPage('vendor');
+    } else {
+      showPage('home');
+    }
+
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span id="auth-btn-text">' + (authMode === 'signin' ? 'Sign In' : 'Create Account') + '</span>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  ORDER PAGE
+// ═══════════════════════════════════════════════════════
+const PRICE = { bw: 2.5, color: 12.0 };
+const BINDING = { none: 0, spiral: 15, staple: 10, comb: 25 };
+
+function setPrintType(type) {
+  state.printType = type;
+  document.getElementById('tc-bw').classList.toggle('sel', type === 'bw');
+  document.getElementById('tc-col').classList.toggle('sel', type === 'color');
+  calcCost();
+}
+
+function calcCost() {
+  const pages = state.pageCount || 0;
+  const copies = parseInt(document.getElementById('f-copies').value) || 1;
+  const bindVal = document.getElementById('f-bind').value;
+  const sidesVal = document.getElementById('f-side').value;
+  const sidesMul = sidesVal === 'double' ? 0.5 : 1;
+  const pricePerPage = PRICE[state.printType] || 2.5;
+  const bindingCost = BINDING[bindVal] || 0;
+  const pageCost = Math.ceil(pricePerPage * pages * copies * sidesMul * 100) / 100;
+  const total = Math.round((pageCost + bindingCost) * 100) / 100;
+
+  document.getElementById('cc-pages-label').textContent = `Pages (${pages}) × ${copies} copies`;
+  document.getElementById('cc-pages').textContent = `₹${pageCost.toFixed(2)}`;
+  document.getElementById('cc-bind').textContent = `₹${bindingCost.toFixed(2)}`;
+  document.getElementById('cc-total').textContent = `₹${total.toFixed(2)}`;
+}
+
+async function onFileSelected(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (!state.user) {
+    showToast('Please login first', 'error');
+    return;
+  }
+
+  const zone = document.getElementById('upload-zone');
+  const title = document.getElementById('upload-title');
+  const hint = document.getElementById('upload-hint');
+  const info = document.getElementById('file-info');
+
+  title.textContent = '⏫ Uploading...';
+  hint.textContent = 'Please wait while we upload and count pages...';
+  info.style.display = 'none';
+  zone.classList.remove('has-file');
+
+  try {
+    const formData = new FormData();
+    formData.append('document', file);
+
+    const res = await fetch(API + '/api/orders/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + state.token },
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    state.uploadedFile = data.data;
+    state.pageCount = data.data.pageCount;
+
+    zone.classList.add('has-file');
+    title.textContent = '✅ File uploaded successfully';
+    hint.textContent = `${data.data.fileName} — ${data.data.pageCount} pages detected`;
+    info.style.display = 'flex';
+    info.textContent = `📄  ${data.data.fileName}  —  ${data.data.pageCount} pages  —  ${data.data.fileSizeMB} MB`;
+
+    calcCost();
+    showToast(`${data.data.pageCount} pages detected`, 'success');
+
+  } catch (err) {
+    title.textContent = 'Drop your file here, or click to browse';
+    hint.textContent = 'Supports PDF, DOCX, PPTX — maximum 50 MB';
+    showToast('Upload failed: ' + err.message, 'error');
+  }
+}
+
+function buildSlots() {
+  const slots = [
+    '9:00 AM','9:30 AM','10:00 AM','10:30 AM',
+    '11:00 AM','11:30 AM','12:00 PM','12:30 PM',
+    '2:00 PM','2:30 PM','3:00 PM','3:30 PM',
+    '4:00 PM','4:30 PM','5:00 PM','5:30 PM'
+  ];
+  const grid = document.getElementById('slot-grid');
+  grid.innerHTML = '';
+  slots.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'slot';
+    div.innerHTML = `<div class="slot-t">${s}</div><div class="slot-a">Available</div>`;
+    div.onclick = () => selectSlot(div, s);
+    grid.appendChild(div);
+  });
+}
+
+function selectSlot(el, slot) {
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('sel'));
+  el.classList.add('sel');
+  state.selectedSlot = slot;
+}
+
+async function confirmOrder() {
+  if (!state.user || state.user.role !== 'customer') {
+    showToast('Please login as a customer', 'error');
+    showPage('login');
+    return;
+  }
+  if (!state.uploadedFile) {
+    showToast('Please upload a file first', 'error');
+    return;
+  }
+  if (!state.selectedSlot) {
+    showToast('Please select a pickup time slot', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('place-order-btn');
+  const btnText = document.getElementById('order-btn-text');
+  btn.disabled = true;
+  btnText.innerHTML = '<div class="spinner"></div> Placing order...';
+
+  try {
+    const body = {
+      fileUrl: state.uploadedFile.fileUrl,
+      filePublicId: state.uploadedFile.filePublicId,
+      fileName: state.uploadedFile.fileName,
+      pageCount: state.uploadedFile.pageCount,
+      printType: state.printType,
+      copies: parseInt(document.getElementById('f-copies').value) || 1,
+      pageRange: document.getElementById('f-range').value,
+      pageSize: document.getElementById('f-size').value,
+      binding: document.getElementById('f-bind').value,
+      sides: document.getElementById('f-side').value,
+      pickupSlot: state.selectedSlot
+    };
+
+    const res = await fetch(API + '/api/orders/place', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.token
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    // Show success page
+    document.getElementById('success-order-id').textContent = data.data.orderId;
+    document.getElementById('success-meta').textContent =
+      `${data.data.pageCount} pages · ${body.printType === 'bw' ? 'B&W' : 'Colour'} · ₹${data.data.totalAmount} · Pickup: ${data.data.pickupSlot}`;
+
+    showPage('success');
+    showToast(`Order ${data.data.orderId} placed! 🎉`, 'success');
+
+  } catch (err) {
+    showToast('Order failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Pay & Confirm Order';
+  }
+}
+
+function resetOrder() {
+  state.uploadedFile = null;
+  state.pageCount = 0;
+  state.selectedSlot = null;
+  document.getElementById('upload-zone').classList.remove('has-file');
+  document.getElementById('upload-title').textContent = 'Drop your file here, or click to browse';
+  document.getElementById('upload-hint').textContent = 'Supports PDF, DOCX, PPTX — maximum 50 MB';
+  document.getElementById('file-info').style.display = 'none';
+  document.getElementById('f-copies').value = 1;
+  document.getElementById('file-input').value = '';
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('sel'));
+  calcCost();
+}
+
+// ═══════════════════════════════════════════════════════
+//  TRACK ORDER
+// ═══════════════════════════════════════════════════════
+async function doTrack() {
+  const id = document.getElementById('track-input').value.trim().toUpperCase();
+  if (!id) { showToast('Please enter an order ID', 'error'); return; }
+
+  try {
+    const res = await fetch(API + '/api/orders/track/' + id);
+    const data = await res.json();
+
+    if (!data.success) {
+      document.getElementById('track-result').style.display = 'none';
+      showToast(data.message, 'error');
+      return;
+    }
+
+    const o = data.data;
+    document.getElementById('track-result').style.display = 'block';
+    document.getElementById('track-order-id').textContent = o.orderId;
+    document.getElementById('track-meta').textContent =
+      `${o.pageCount} pages · ${o.printType === 'bw' ? 'B&W' : 'Colour'} · ₹${o.totalAmount} · Pickup: ${o.pickupSlot}`;
+
+    const icons = { pending: '⏳', printing: '⚙️', ready: '📦', collected: '🎓' };
+    const texts = { pending: 'Order Pending', printing: 'Currently Printing', ready: 'Ready for Pickup!', collected: 'Order Collected' };
+
+    document.getElementById('track-icon').textContent = icons[o.status] || '📋';
+    document.getElementById('track-status-text').textContent = texts[o.status] || 'Unknown Status';
+    document.getElementById('track-sub').textContent =
+      o.status === 'ready' ? '🎉 Your order is ready! Please collect it at the stationery.' :
+      o.status === 'collected' ? 'Order has been collected. Thank you!' :
+      'Your printout is being processed.';
+
+    // Update tracker steps
+    const step = o.currentStep;
+    ['ts-placed','ts-paid','ts-printing','ts-ready','ts-collected'].forEach((id, idx) => {
+      const el = document.getElementById(id);
+      el.className = 't-step';
+      if (idx < step) el.classList.add('done');
+      else if (idx === step) el.classList.add('active');
+    });
+
+  } catch (err) {
+    showToast('Failed to track order', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  MY ORDERS (customer)
+// ═══════════════════════════════════════════════════════
+async function loadMyOrders() {
+  if (!state.user || state.user.role !== 'customer') return;
+
+  const container = document.getElementById('my-orders-rows');
+  container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--ink3);">Loading...</div>';
+
+  try {
+    const res = await fetch(API + '/api/orders/my', {
+      headers: { 'Authorization': 'Bearer ' + state.token }
+    });
+    const data = await res.json();
+
+    if (!data.success || data.data.length === 0) {
+      container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--ink3); font-size:13px;">No orders yet. Place your first order!</div>';
+      return;
+    }
+
+    container.innerHTML = data.data.map(o => {
+      const badgeClass = { pending:'b-pending', printing:'b-printing', ready:'b-ready', collected:'b-done' }[o.status] || 'b-pending';
+      const badgeLabel = { pending:'Pending', printing:'Printing', ready:'Ready ✓', collected:'Collected' }[o.status] || o.status;
+      const dateStr = new Date(o.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+      return `<div class="tbl-row">
+        <span class="oid" style="cursor:pointer;" onclick="document.getElementById('track-input').value='${o.orderId}'; doTrack();">${o.orderId}</span>
+        <span>${o.pageCount} pg · ${o.printType === 'bw' ? 'B&W' : 'Colour'} · ${o.binding}</span>
+        <span style="font-family:var(--mono);">₹${o.totalAmount}</span>
+        <span><span class="badge ${badgeClass}">${badgeLabel}</span></span>
+        <span style="font-size:12px;color:var(--ink3);">${o.pickupSlot} · ${dateStr}</span>
+      </div>`;
+    }).join('');
+
+  } catch (err) {
+    container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--red); font-size:13px;">Failed to load orders.</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  VENDOR DASHBOARD
+// ═══════════════════════════════════════════════════════
+async function loadVendorDashboard() {
+  if (!state.user || state.user.role !== 'vendor') return;
+
+  document.getElementById('vendor-welcome').textContent =
+    `Welcome, ${state.user.name} · Vendor ID: ${state.user.vendorId || '—'}`;
+
+  try {
+    const res = await fetch(API + '/api/vendor/dashboard', {
+      headers: { 'Authorization': 'Bearer ' + state.token }
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      showToast('Failed to load dashboard', 'error');
+      return;
+    }
+
+    const m = data.data.metrics;
+    document.getElementById('m-total').textContent = m.todayOrders;
+    document.getElementById('m-pend').textContent = m.pendingOrders;
+    document.getElementById('m-ready').textContent = m.readyOrders;
+    document.getElementById('m-rev').textContent = `₹${m.todayRevenue.toLocaleString('en-IN')}`;
+    document.getElementById('m-total-tag').textContent = `+${m.todayOrders} today`;
+
+    // Render queue
+    renderQueue(data.data.activeQueue);
+
+    // Render bar chart
+    renderBarChart(data.data.hourlyChart);
+
+    // Render notifications from recent orders
+    renderNotifications(data.data.recentOrders);
+
+  } catch (err) {
+    showToast('Dashboard error: ' + err.message, 'error');
+  }
+}
+
+function renderQueue(queue) {
+  const container = document.getElementById('vendor-queue-rows');
+  if (!queue || queue.length === 0) {
+    container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--ink3); font-size:13px;">🎉 No active orders in queue!</div>';
+    return;
+  }
+
+  container.innerHTML = queue.map(o => {
+    const typeLabel = o.printType === 'bw' ? 'B&W' : 'Colour';
+    const bindLabel = { none:'No binding', spiral:'Spiral', staple:'Staple', comb:'Comb' }[o.binding] || o.binding;
+    let actionHtml = '';
+
+    if (o.status === 'pending') {
+      actionHtml = `
+        <button class="act start" onclick="updateStatus('${o.orderId}', 'printing')">Start ▶</button>
+        <button class="act" onclick="updateStatus('${o.orderId}', 'collected')">Skip</button>`;
+    } else if (o.status === 'printing') {
+      actionHtml = `
+        <button class="act" style="background:var(--amber2);color:var(--amber);border-color:var(--amber);" onclick="updateStatus('${o.orderId}', 'ready')">Mark Ready ✓</button>`;
+    } else if (o.status === 'ready') {
+      actionHtml = `
+        <button class="act" style="background:var(--green2);color:var(--green);border-color:var(--green);" onclick="updateStatus('${o.orderId}', 'collected')">Collected 🎓</button>`;
+    }
+
+    return `<div class="q-row">
+      <span class="oid">${o.orderId}</span>
+      <span><strong>${o.customerName}</strong> &nbsp;·&nbsp; ${typeLabel}, ${bindLabel}, ${o.copies}×
+        ${o.fileUrl ? `<a href="${o.fileUrl}" target="_blank" style="color:var(--accent2);font-size:11px;margin-left:4px;">📄 View file</a>` : ''}
+      </span>
+      <span>${o.pageCount} pg</span>
+      <span style="font-family:var(--mono);">₹${o.totalAmount}</span>
+      <span style="font-size:12px;color:var(--ink3);">${o.pickupSlot}</span>
+      <div class="act-btns">${actionHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+async function updateStatus(orderId, status) {
+  try {
+    const res = await fetch(API + '/api/vendor/orders/' + orderId + '/status', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.token
+      },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    const labels = { printing: '🖨️ Printing started', ready: '✅ Marked as ready', collected: '🎓 Order collected' };
+    showToast(`${orderId}: ${labels[status] || status}`, 'success');
+    loadVendorDashboard();
+
+  } catch (err) {
+    showToast('Update failed: ' + err.message, 'error');
+  }
+}
+
+function renderBarChart(hourly) {
+  const chart = document.getElementById('bar-chart');
+  if (!hourly) { chart.innerHTML = ''; return; }
+
+  const values = Object.entries(hourly).map(([h, d]) => ({ hour: parseInt(h), ...d }));
+  const maxCount = Math.max(...values.map(v => v.count), 1);
+
+  chart.innerHTML = values.map(v => {
+    const height = Math.max(4, Math.round((v.count / maxCount) * 90));
+    const label = v.hour < 12 ? `${v.hour}A` : v.hour === 12 ? '12P' : `${v.hour-12}P`;
+    return `<div class="bar-col">
+      <div class="bar-fill" style="height:${height}px; background:var(--accent3); border: 1px solid var(--accent2);" title="${v.count} orders at ${v.hour}:00"></div>
+      <div class="bar-lbl">${label}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderNotifications(orders) {
+  const list = document.getElementById('notif-list');
+  const countEl = document.getElementById('notif-count');
+
+  if (!orders || orders.length === 0) {
+    list.innerHTML = '<div style="padding:16px; text-align:center; color:var(--ink3); font-size:13px;">No recent orders</div>';
+    countEl.textContent = '0';
+    return;
+  }
+
+  const pending = orders.filter(o => o.status === 'pending').length;
+  countEl.textContent = `${pending} pending`;
+
+  list.innerHTML = orders.slice(0, 6).map(o => {
+    const isNew = o.status === 'pending';
+    const timeAgo = getTimeAgo(o.createdAt);
+    const msgs = {
+      pending: `New order ${o.orderId} from ${o.customerName}`,
+      printing: `${o.orderId} is being printed`,
+      ready: `${o.orderId} is ready for pickup`,
+      collected: `${o.orderId} collected by ${o.customerName}`
+    };
+    return `<div class="notif-item ${isNew ? 'unread' : ''}">
+      <div class="n-dot ${isNew ? '' : 'grey'}"></div>
+      <div>
+        <div class="n-text">${msgs[o.status] || o.orderId}</div>
+        <div class="n-time">${timeAgo}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getTimeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  return `${Math.floor(hrs/24)} day(s) ago`;
+}
+
+// Init login form visibility
+switchAuthMode('signin');
+updateVendorInviteVisibility();
+</script>
+</body>
+</html>
