@@ -736,9 +736,44 @@
 
 <script>
 // ═══════════════════════════════════════════════════════
-//  CONFIGURATION
+//  CONFIGURATION & NETWORK HELPER
 // ═══════════════════════════════════════════════════════
-const API = ''; // Empty = same origin (served from Express)
+// If served from Express or Vercel, API is empty (same origin).
+// If opened on Live Server (port 5500/3000), fallback to Express backend (localhost:5000).
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port && window.location.port !== '5000'
+  ? 'http://localhost:5000'
+  : '';
+
+/**
+ * Robust fetch wrapper that safely handles non-JSON / HTML / Vercel error responses
+ */
+async function apiFetch(endpoint, options = {}) {
+  const url = endpoint.startsWith('http') ? endpoint : (API + endpoint);
+  try {
+    const res = await fetch(url, options);
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      return { ok: res.ok, status: res.status, data };
+    }
+    // Handle HTML/plain text error responses (e.g. from Vercel or proxy)
+    const rawText = await res.text();
+    const cleanText = rawText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const errorMsg = cleanText ? cleanText.slice(0, 160) : `Server error (${res.status})`;
+    return {
+      ok: false,
+      status: res.status,
+      data: { success: false, message: errorMsg }
+    };
+  } catch (netErr) {
+    return {
+      ok: false,
+      status: 0,
+      data: { success: false, message: netErr.message || 'Network connection failed' }
+    };
+  }
+}
+
 
 // ═══════════════════════════════════════════════════════
 //  STATE
@@ -907,16 +942,14 @@ async function submitAuth() {
       body = { email, password };
     }
 
-    const res = await fetch(API + endpoint, {
+    const { ok, data } = await apiFetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
 
-    const data = await res.json();
-
     if (!data.success) {
-      throw new Error(data.message || 'Authentication failed.');
+      throw new Error(data.message || (data.details ? `${data.message} (${data.details})` : 'Authentication failed.'));
     }
 
     state.user = data.user;
@@ -995,14 +1028,13 @@ async function onFileSelected(event) {
     const formData = new FormData();
     formData.append('document', file);
 
-    const res = await fetch(API + '/api/orders/upload', {
+    const { ok, data } = await apiFetch('/api/orders/upload', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + state.token },
       body: formData
     });
 
-    const data = await res.json();
-    if (!data.success) throw new Error(data.message);
+    if (!data.success) throw new Error(data.message || 'File upload failed');
 
     state.uploadedFile = data.data;
     state.pageCount = data.data.pageCount;
@@ -1082,7 +1114,7 @@ async function confirmOrder() {
       pickupSlot: state.selectedSlot
     };
 
-    const res = await fetch(API + '/api/orders/place', {
+    const { ok, data } = await apiFetch('/api/orders/place', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1091,8 +1123,7 @@ async function confirmOrder() {
       body: JSON.stringify(body)
     });
 
-    const data = await res.json();
-    if (!data.success) throw new Error(data.message);
+    if (!data.success) throw new Error(data.message || 'Failed to place order');
 
     // Show success page
     document.getElementById('success-order-id').textContent = data.data.orderId;
@@ -1132,12 +1163,11 @@ async function doTrack() {
   if (!id) { showToast('Please enter an order ID', 'error'); return; }
 
   try {
-    const res = await fetch(API + '/api/orders/track/' + id);
-    const data = await res.json();
+    const { ok, data } = await apiFetch('/api/orders/track/' + id);
 
     if (!data.success) {
       document.getElementById('track-result').style.display = 'none';
-      showToast(data.message, 'error');
+      showToast(data.message || 'Order not found', 'error');
       return;
     }
 
@@ -1181,12 +1211,11 @@ async function loadMyOrders() {
   container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--ink3);">Loading...</div>';
 
   try {
-    const res = await fetch(API + '/api/orders/my', {
+    const { ok, data } = await apiFetch('/api/orders/my', {
       headers: { 'Authorization': 'Bearer ' + state.token }
     });
-    const data = await res.json();
 
-    if (!data.success || data.data.length === 0) {
+    if (!data.success || !data.data || data.data.length === 0) {
       container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--ink3); font-size:13px;">No orders yet. Place your first order!</div>';
       return;
     }
@@ -1219,13 +1248,12 @@ async function loadVendorDashboard() {
     `Welcome, ${state.user.name} · Vendor ID: ${state.user.vendorId || '—'}`;
 
   try {
-    const res = await fetch(API + '/api/vendor/dashboard', {
+    const { ok, data } = await apiFetch('/api/vendor/dashboard', {
       headers: { 'Authorization': 'Bearer ' + state.token }
     });
-    const data = await res.json();
 
     if (!data.success) {
-      showToast('Failed to load dashboard', 'error');
+      showToast(data.message || 'Failed to load dashboard', 'error');
       return;
     }
 
@@ -1289,7 +1317,7 @@ function renderQueue(queue) {
 
 async function updateStatus(orderId, status) {
   try {
-    const res = await fetch(API + '/api/vendor/orders/' + orderId + '/status', {
+    const { ok, data } = await apiFetch('/api/vendor/orders/' + orderId + '/status', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -1297,8 +1325,7 @@ async function updateStatus(orderId, status) {
       },
       body: JSON.stringify({ status })
     });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.message);
+    if (!data.success) throw new Error(data.message || 'Failed to update status');
 
     const labels = { printing: '🖨️ Printing started', ready: '✅ Marked as ready', collected: '🎓 Order collected' };
     showToast(`${orderId}: ${labels[status] || status}`, 'success');
