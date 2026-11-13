@@ -4,11 +4,14 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'mysecret123';
+const VENDOR_INVITE_CODE = process.env.VENDOR_INVITE_CODE || 'VENDOR2024';
+
 /**
  * Helper: sign a JWT token
  */
 function signToken(userId) {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
 }
 
 // ─────────────────────────────────────────────────────────
@@ -76,7 +79,7 @@ router.post('/register/vendor', async (req, res) => {
     }
 
     // Validate vendor invite code
-    if (inviteCode !== process.env.VENDOR_INVITE_CODE) {
+    if (inviteCode !== VENDOR_INVITE_CODE) {
       return res.status(403).json({
         success: false,
         message: 'Invalid vendor invite code. Contact the administrator.'
